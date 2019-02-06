@@ -63,7 +63,7 @@ GLuint loadShader(const char *vertexfilename, const char *fragmentfilename) {
   glCompileShader(vertex_shader_id);
   glAttachShader(program, vertex_shader_id);
   
-  string str2 = getTextFile(fragmentfilename)
+  string str2 = getTextFile(fragmentfilename);
   const char *fragment_shader_file = str2.c_str();
   fragment_shader_id= glCreateShader(GL_FRAGMENT_SHADER);
   glShaderSource(fragment_shader_id,1,&fragment_shader_file,NULL);
