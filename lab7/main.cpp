@@ -22,6 +22,29 @@ const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 800;
 
 
+vector<vec2> control_points;
+
+float factorial(int n){
+	float x = 1;
+	for(int i = 1; i <= n ; i++)
+  {
+		x *= i;	
+	}
+	return x;
+}
+
+float combination(int n, int k) {
+  float x;
+  x = factorial(n) / (factorial(k) * factorial(n - k));
+	return x;
+}
+
+float binomial(int n, int k, float t) {
+  float x;
+  x = combination(n, k) * pow(t, k) * pow(1 - t, n - k);
+	return x;
+}
+
 void GL_render()
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -34,6 +57,19 @@ void GL_render()
     glVertex2f(.5f,-.5f);
     glVertex2f(.5f,.5f);
     glVertex2f(-.5f,.5f);
+    glEnd();
+    
+    glBegin(GL_LINE_STRIP);
+    for(float t = 0.0; t < 1.0; t += 0.01) 
+    {
+      vec2 Bt;
+      for(unsigned i = 0; i < control_points.size(); i++) 
+      {
+      	Bt += binomial(control_points.size() - 1, i, t) * control_points.at(i);
+      }
+      glColor3f(1.0f,0.0f,0.0f);
+      glVertex2f(Bt[0], Bt[1]);
+    }
     glEnd();
     glFlush();
 }
@@ -51,6 +87,8 @@ void GL_mouse(int button,int state,int x,int y)
     if(button==GLUT_LEFT_BUTTON && state==GLUT_DOWN){
         double px,py,dummy_z; // we don't care about the z-value but need something to pass in
         gluUnProject(x,y,0,mv_mat,proj_mat,vp_mat,&px,&py,&dummy_z);
+  		  vec2 temp = vec2(px, py);
+		    control_points.push_back(temp);
         glutPostRedisplay();
     }
 }
@@ -64,7 +102,7 @@ void GLInit(int* argc, char** argv)
 
     //glMatrixMode(GL_PROJECTION_MATRIX);
     //glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
-    glutCreateWindow("CS 130 - <Insert Name Here>");
+    glutCreateWindow("CS 130 - atung003");
     glutDisplayFunc(GL_render);
     glutMouseFunc(GL_mouse);
 }
