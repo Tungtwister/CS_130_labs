@@ -17,6 +17,83 @@
 #endif
 
 using namespace std;
+
+struct Particle
+{
+  float m; //mass
+  vec3 x;  //position
+  vec3 v;  //velocity
+  vec3 f;  //force
+  
+  vec3 color; //color
+  float d; //duration
+  
+  void Euler_Step(float h)
+  {
+    x = x + v * h;
+    v = v + h / m * f;
+  }
+  void Reset_Forces()
+  {
+    f = vec3(0,0,0);
+  }
+  void Handle_Collision(float damping, float coeff_resititution)
+  {
+    //if Xy<0 set Xy = 0
+    //update y-component using Poisson's restitution rule
+    if(x[1] < 0)
+    {
+      x[1] = 0;
+      //apply damping
+      if(v[1] < 0)
+      {
+        v[1] = -coeff_resititution * v[1];
+        v[0] = damping * v[0];
+        v[2] = damping * v[2];
+      }
+    }
+  }
+};
+
+vector<Particle> particles;
+
+float random(float k, float l) {
+    float num = (k + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX/(l - k))));
+    return num;
+}
+
+void Add_Particles(int n)
+{
+  for(int i = 0; i < n; i++)
+  {
+    Particle temp;
+    temp.m = 1.0;
+    temp.x = vec3(random(0,0.2) , 0.05, random(0,0.2));
+    temp.v = vec3(10*temp.x[0],random(1,10),10*temp.x[2]);
+    temp.color = vec3(255,255,0);
+    temp.d = 0.0;
+    particles.push_back(temp);
+  }
+}
+
+vec3 Get_Particle_Color(float d)
+{
+  float i1 = (d-0.1)/(1.5-0.1);
+  float i2 = (d-2)/(3-2);
+  vec3 color;
+  if(d < 0.1)
+    color = vec3(1,1,0);
+  else if(d < 1.5)
+		color = (1 - i1) * vec3(1, 1, 0) + i1 * vec3(1, 0, 0);
+	else if(d < 2)
+		color = vec3(1, 0, 0);
+	else if(d < 3)
+		color = (1 - i2) * vec3(1, 0, 0) + i2 * vec3(0.5, 0.5, 0.5);
+	else
+		color = vec3(0.5, 0.5, 0.5);
+   
+  return color;
+}
 enum { NONE, AMBIENT, DIFFUSE, SPECULAR, NUM_MODES };
 
 void draw_grid(int dim);
@@ -48,7 +125,7 @@ application::~application()
 // triggered once after the OpenGL context is initialized
 void application::init_event()
 {
-
+    Add_Particles(10);
     cout << "CAMERA CONTROLS: \n  LMB: Rotate \n  MMB: Move \n  RMB: Zoom" << endl;
     cout << "KEYBOARD CONTROLS: \n";
     cout << "  'p': Pause simulation\n";
@@ -121,12 +198,15 @@ void application::draw_event()
     if (!paused) {
         //
         //ADD NEW PARTICLES
-        //
-        //
+        Add_Particles(20);
         // SIMULATE YOUR PARTICLE HERE.
-        //
-        //
-        //
+        for(unsigned i = 0; i < particles.size(); i++)
+        {
+          particles[i].Reset_Forces();
+          particles[i].f += vec3(0,-9.8*particles[i].m,0);
+          particles[i].Euler_Step(h);
+          particles[i].Handle_Collision(0.5,0.5);
+        }
         // UPDATE THE COLOR OF THE PARTICLE DYNAMICALLY
         //
     }
@@ -137,7 +217,15 @@ void application::draw_event()
         //
         //
         // DRAW YOUR PARTICLE USING GL_LINES HERE
-        //
+        for(unsigned i = 0; i < particles.size(); i++)
+        {
+          particles[i].d += h;
+          vec3 x_old(particles[i].x + 0.05f * particles[i].v);
+          vec3 color = Get_Particle_Color(particles[i].d);
+          glColor3f(color[0], color[1], color[2]);
+	     	  glVertex3f(particles[i].x[0], particles[i].x[1], particles[i].x[2]);
+	     	  glVertex3f(x_old[0], x_old[1], x_old[2]);
+        }
         // glVertex3f(...) endpoint 1
         // glVertex3f(...) endpoint 2
         //
